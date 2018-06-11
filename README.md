@@ -1,10 +1,16 @@
 # angrgdb
 Use angr inside GDB. Create an angr state from the current debugger state.
 
-## WARNING
-Use gdb compiled with python 2!
+## Install
 
-You can download precompiled DEB packeges [here](https://github.com/andreafioraldi/gdb-py2-builds)
+```
+pip install angrgdb
+```
+
+### WARNING
+angrgdb needs gdb compiled with python 2!
+
+You can download the precompiled DEB packeges [here](https://github.com/andreafioraldi/gdb-py2-builds)
 
 ## Usage
 
@@ -50,3 +56,11 @@ Correct! that is the secret key!
 [Inferior 1 (process 3228) exited normally]
 (gdb) q
 ```
+
+The project is very naive at the moment, PR are welcome.
+
+## TODO
+
++ add GDB commands to use angrgdb outside the python shell
++ add remote angrdbg like in IDAngr
+
