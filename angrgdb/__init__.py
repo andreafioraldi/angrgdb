@@ -68,21 +68,14 @@ class GDBDebugger(Debugger):
     
     #-------------------------------------
     def before_stateshot(self):
-        vmmap = self._get_vmmap()
+        self.vmmap = self._get_vmmap()
         sections = self._get_sections()
-        self.segments = {}
-        yet = []
         
         for start, end, name in sections:
-            for mstart, mend, perms, mname in vmmap:
-                if start >= mstart and start < mend:
-                    self.segments[name] = Segment(name, start, end, perms)
-                    yet.append(start)
-                    break
-        
-        for mstart, mend, perms, mname in vmmap:
-            if mstart not in yet:
-                self.segments[mname] = Segment(mname, mstart, mend, perms)
+            if name == load_project().arch.got_section_name:
+                self.got = (start, end)
+            elif name == ".plt":
+                self.plt = (start, end)
         
         
     def after_stateshot(self, state):
@@ -92,8 +85,8 @@ class GDBDebugger(Debugger):
         return gdb.selected_thread() is not None
     
     #-------------------------------------
-    def input_file_path(self):
-        return gdb.current_progspace().filename
+    def input_file(self):
+        return open(gdb.current_progspace().filename, "rb")
     
     def image_base(self):
         if self.base_addr is None:
@@ -110,17 +103,17 @@ class GDBDebugger(Debugger):
     
     def get_word(self, addr):
         try:
-            return struct.unpack("<H", str(self.inferior.read_memory(addr, 2)))
+            return struct.unpack("<H", str(self.inferior.read_memory(addr, 2)))[0]
         except: return None
     
     def get_dword(self, addr):
         try:
-            return struct.unpack("<I", str(self.inferior.read_memory(addr, 4)))
+            return struct.unpack("<I", str(self.inferior.read_memory(addr, 4)))[0]
         except: return None
     
     def get_qword(self, addr):
         try:
-            return struct.unpack("<Q", str(self.inferior.read_memory(addr, 8)))
+            return struct.unpack("<Q", str(self.inferior.read_memory(addr, 8)))[0]
         except: return None
     
     def get_bytes(self, addr, size):
@@ -174,17 +167,23 @@ class GDBDebugger(Debugger):
     
     #-------------------------------------
     def seg_by_name(self, name):
-        return self.segments.get(name, None)
+        for start, end, perms, mname in self.vmmap:
+            if name == mname:
+                return Segment(name, start, end, perms)
+        return None
 
     def seg_by_addr(self, addr):
-        r = filter(lambda n: addr >= self.segments[n].start and addr < self.segments[n].end, self.segments.keys())
-        if len(r) == 0:
-            return None
-        return self.segments[r[-1]]
+        for start, end, perms, name in self.vmmap:
+            if addr >= start and addr < end:
+                return Segment(name, start, end, perms)
+        return None
     
-    def seg_is_got(self, seg):
-        return seg.name == load_project().arch.got_section_name
-
+    def get_got(self): #return tuple(start_addr, end_addr)
+        return self.got
+    
+    def get_plt(self): #return tuple(start_addr, end_addr)
+        return self.plt
+    
     #-------------------------------------
     def resolve_name(self, name): #return None on fail
         try:
