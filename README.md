@@ -1,5 +1,8 @@
 # angrgdb
+
 Use angr inside GDB. Create an angr state from the current debugger state.
+
+The project is very naive at the moment, PR are welcome.
 
 ## Install
 
@@ -9,13 +12,22 @@ echo "python import angrgdb.commands" >> ~/.gdbinit
 ```
 
 ### WARNING
+
 angrgdb needs gdb compiled with python 2!
 
 You can download the precompiled DEB packeges [here](https://github.com/andreafioraldi/gdb-py2-builds)
 
 ## Usage
 
+You can use angrgdb commands directly in GDB for simple stuffs.
+
+Look here for an example:
+
+[![asciicast](https://asciinema.org/a/6KOKIBESiG68iPdesXQTjYJvR.png)](https://asciinema.org/a/6KOKIBESiG68iPdesXQTjYJvR)
+
 angrgdb implements the [angrdbg](https://github.com/andreafioraldi/angrdbg) API in GDB.
+
+You can use it with the `angrgdb shell` command.
 
 ```
 (gdb) b *0x004005f9
@@ -26,7 +38,7 @@ Starting program: /ais3_crackme aaaaaaaa
 Breakpoint 1, 0x00000000004005f9 in main ()
 (gdb) x/s $rax
 0x7fffffffe768:	"aaaaaaaa"
-(gdb) angrgdb
+(gdb) angrgdb shell
  >> creating angr project...
  >> done.
 [angrgdb]: sm is a StateManager instance created from the current GDB state
@@ -64,10 +76,7 @@ Correct! that is the secret key!
 (gdb) q
 ```
 
-The project is very naive at the moment, PR are welcome.
-
 ## TODO
 
-+ add GDB commands to use angrgdb outside the python shell
 + add remote angrdbg like in IDAngr
 
