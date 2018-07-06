@@ -14,6 +14,7 @@ except ImportError:
 
 from angrdbg import *
 
+
 class GDBDebugger(Debugger):
     def __init__(self):
         self.inferior = gdb.selected_inferior()
@@ -28,13 +29,14 @@ class GDBDebugger(Debugger):
         self.efl_map['IF'] = 1 << 9
         self.efl_map['DF'] = 1 << 10
         self.efl_map['OF'] = 1 << 11
-        
+
     def _get_vmmap(self):
         pid = int(self.inferior.pid)
         maps = []
         mpath = "/proc/%s/maps" % pid
         # 00400000-0040b000 r-xp 00000000 08:02 538840  /path/to/file
-        pattern = re.compile("([0-9a-f]*)-([0-9a-f]*) ([rwxps-]*)(?: [^ ]*){3} *(.*)")
+        pattern = re.compile(
+            "([0-9a-f]*)-([0-9a-f]*) ([rwxps-]*)(?: [^ ]*){3} *(.*)")
 
         out = open(mpath).read()
 
@@ -54,88 +56,105 @@ class GDBDebugger(Debugger):
                     mapperm |= SEG_PROT_X
                 maps += [(start, end, mapperm, mapname)]
         return maps
-    
+
     def _get_sections(self):
         base = self.image_base()
         info = gdb.execute("info file", to_string=True)
         # 0x0000000000000238 - 0x0000000000000254 is .interp
         pattern = re.compile("0x([0-9a-f]*) - 0x([0-9a-f]*) is (.*)")
-        
+
         matches = pattern.findall(info)
-        matches = filter(lambda x: " in " not in x[2], matches) #don't get sections of shared libs
+        # don't get sections of shared libs
+        matches = filter(lambda x: " in " not in x[2], matches)
         return map(lambda x: (int(x[0], 16), int(x[1], 16), x[2]), matches)
-    
-    #-------------------------------------
+
+    # -------------------------------------
     def before_stateshot(self):
         self.vmmap = self._get_vmmap()
         sections = self._get_sections()
-        
+
         for start, end, name in sections:
             if name == load_project().arch.got_section_name:
                 self.got = (start, end)
             elif name == ".plt":
                 self.plt = (start, end)
         self.long_type = gdb.lookup_type("long")
-        
+
     def after_stateshot(self, state):
         pass
-    #-------------------------------------
+    # -------------------------------------
+
     def is_active(self):
         return gdb.selected_thread() is not None
-    
-    #-------------------------------------
+
+    # -------------------------------------
     def input_file(self):
         return open(gdb.current_progspace().filename, "rb")
-    
+
     def image_base(self):
         if self.base_addr is None:
             mappings = gdb.execute("info proc mappings", to_string=True)
             first_num_pos = mappings.find("0x")
-            self.base_addr = int(mappings[first_num_pos: mappings.find(" ", first_num_pos)], 16)
+            self.base_addr = int(
+                mappings[first_num_pos: mappings.find(" ", first_num_pos)], 16)
         return self.base_addr
-    
-    #-------------------------------------
+
+    # -------------------------------------
     def get_byte(self, addr):
         try:
             return ord(str(self.inferior.read_memory(addr, 1)))
-        except: return None
-    
+        except BaseException:
+            return None
+
     def get_word(self, addr):
         try:
-            return struct.unpack("<H", str(self.inferior.read_memory(addr, 2)))[0]
-        except: return None
-    
+            return struct.unpack(
+                "<H", str(
+                    self.inferior.read_memory(
+                        addr, 2)))[0]
+        except BaseException:
+            return None
+
     def get_dword(self, addr):
         try:
-            return struct.unpack("<I", str(self.inferior.read_memory(addr, 4)))[0]
-        except: return None
-    
+            return struct.unpack(
+                "<I", str(
+                    self.inferior.read_memory(
+                        addr, 4)))[0]
+        except BaseException:
+            return None
+
     def get_qword(self, addr):
         try:
-            return struct.unpack("<Q", str(self.inferior.read_memory(addr, 8)))[0]
-        except: return None
-    
+            return struct.unpack(
+                "<Q", str(
+                    self.inferior.read_memory(
+                        addr, 8)))[0]
+        except BaseException:
+            return None
+
     def get_bytes(self, addr, size):
         try:
             return str(self.inferior.read_memory(addr, size))
-        except: return None
-    
+        except BaseException:
+            return None
+
     def put_byte(self, addr, value):
         self.inferior.write_memory(addr, chr(value))
-    
+
     def put_word(self, addr, value):
         self.inferior.write_memory(addr, struct.pack("<H", value))
-    
+
     def put_dword(self, addr, value):
         self.inferior.write_memory(addr, struct.pack("<I", value))
-    
+
     def put_qword(self, addr, value):
         self.inferior.write_memory(addr, struct.pack("<Q", value))
-    
+
     def put_bytes(self, addr, value):
         self.inferior.write_memory(addr, value)
-    
-    #-------------------------------------
+
+    # -------------------------------------
     def get_reg(self, name):
         if name == "efl" or name == "eflags":
             value = 0
@@ -145,26 +164,26 @@ class GDBDebugger(Debugger):
             return value
         else:
             return int(gdb.parse_and_eval("$" + name).cast(self.long_type))
-    
+
     def set_reg(self, name, value):
         if name == "efl":
             name = "eflags"
         gdb.execute("set $%s = %d" % (name, value))
-    
-    #-------------------------------------
+
+    # -------------------------------------
     def step_into(self):
         gdb.execute("stepi", to_string=True)
-    
+
     def run(self):
         gdb.execute("continue")
-    
+
     def wait_ready(self):
         pass
-    
+
     def refresh_memory(self):
         pass
-    
-    #-------------------------------------
+
+    # -------------------------------------
     def seg_by_name(self, name):
         for start, end, perms, mname in self.vmmap:
             if name == mname:
@@ -176,23 +195,22 @@ class GDBDebugger(Debugger):
             if addr >= start and addr < end:
                 return Segment(name, start, end, perms)
         return None
-    
-    def get_got(self): #return tuple(start_addr, end_addr)
+
+    def get_got(self):  # return tuple(start_addr, end_addr)
         return self.got
-    
-    def get_plt(self): #return tuple(start_addr, end_addr)
+
+    def get_plt(self):  # return tuple(start_addr, end_addr)
         return self.plt
-    
-    #-------------------------------------
-    def resolve_name(self, name): #return None on fail
+
+    # -------------------------------------
+    def resolve_name(self, name):  # return None on fail
         try:
             res = gdb.execute("info address " + name, to_string=True)
             a = res.find(" is at 0x")
             b = res.find(" ", a + len(" is at 0x"))
             return int(res[a + len(" is at 0x"):b], 16)
-        except:
+        except BaseException:
             return None
 
+
 register_debugger(GDBDebugger())
-
-
