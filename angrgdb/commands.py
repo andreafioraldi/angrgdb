@@ -189,7 +189,7 @@ class AngrGDBAvoidCommand(gdb.Command):
     '''
     Set the address list to find
 
-    Usage: angrgdb find <address0> <address1> ... <addressN>
+    Usage: angrgdb avoid <address0> <address1> ... <addressN>
     '''
 
     def __init__(self):
