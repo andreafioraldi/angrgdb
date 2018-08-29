@@ -76,6 +76,11 @@ Correct! that is the secret key!
 (gdb) q
 ```
 
+### Loading scripts in GDB
+
+This is a tip if you don't want to use angrgdb from the cli but you want to use a python script.
+To load a script in GDB use `source script.py`.
+
 ## TODO
 
 + add remote angrdbg like in IDAngr
