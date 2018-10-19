@@ -1,10 +1,10 @@
 import gdb
 
-try:
+'''try:
     import IPython
     has_shell = True
 except:
-    has_shell = False
+    has_shell = False'''
 
 from angrgdb import *
 
@@ -55,7 +55,7 @@ class AngrGDBCommand(gdb.Command):
 
 class AngrGDBShellCommand(gdb.Command):
     '''
-    Symbolic execution in GDB
+    Opena python shell with a StateManager instance inside
     '''
 
     def __init__(self):
@@ -68,17 +68,19 @@ class AngrGDBShellCommand(gdb.Command):
     def invoke(self, arg, from_tty):
         self.dont_repeat()
         
-        if not has_shell:
-            raise AngrGDBError("Cannot open a shell, IPython is not installed")
+        #if not has_shell:
+        #    raise AngrGDBError("Cannot open a shell, IPython is not installed")
         
         if from_tty:
-            sm = StateManager()
+            '''sm = StateManager()
             IPython.embed(
                 banner1="[angrgdb]: sm is a StateManager instance created from the current GDB state\n",
                 banner2="",
                 exit_msg="",
                 use_ns={
-                    "sm": sm})
+                    "sm": sm})'''
+            print("[angrgdb]: sm is a StateManager instance created from the current GDB state")
+            gdb.execute("py from angrgdb import *; sm = StateManager(); gdb.execute('pi')")
         else:
             raise AngrGDBError(
                 "The ipython shell can be launched only from the tty")
