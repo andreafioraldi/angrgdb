@@ -7,7 +7,7 @@ __email__ = "andreafioraldi@gmail.com"
 
 from setuptools import setup
 
-VER = "1.0.3"
+VER = "1.0.4"
 
 setup(
     name='angrgdb',
@@ -20,5 +20,5 @@ setup(
     download_url = 'https://github.com/andreafioraldi/angrgdb/archive/' + VER + '.tar.gz',
     package_dir={'angrgdb': 'angrgdb'},
     packages=['angrgdb'],
-    install_requires=['angrdbg', 'ipython<6.0.0'],
+    install_requires=['angrdbg'],
 )

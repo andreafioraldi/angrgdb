@@ -2,15 +2,17 @@ import sys
 import struct
 import re
 
-if sys.version_info >= (3, 0):
-    print("angrgdb: fatal error: i need python 2")
-    exit(1)
-
 try:
     import gdb
 except ImportError:
     print("angrgdb: fatal error: not running inside GDB")
     exit(1)
+
+if sys.version_info >= (3, 0):
+    long = int
+else:
+    long
+    bytes = str
 
 from angrdbg import *
 
@@ -102,40 +104,33 @@ class GDBDebugger(Debugger):
     # -------------------------------------
     def get_byte(self, addr):
         try:
-            return ord(str(self.inferior.read_memory(addr, 1)))
+            return int(self.inferior.read_memory(addr, 1).tobytes()[0])
         except BaseException:
             return None
 
     def get_word(self, addr):
         try:
             return struct.unpack(
-                "<H", str(
-                    self.inferior.read_memory(
-                        addr, 2)))[0]
+                "<H", self.inferior.read_memory(addr, 2).tobytes())[0]
         except BaseException:
             return None
 
     def get_dword(self, addr):
         try:
             return struct.unpack(
-                "<I", str(
-                    self.inferior.read_memory(
-                        addr, 4)))[0]
+                "<I", self.inferior.read_memory(addr, 4).tobytes())[0]
         except BaseException:
             return None
 
     def get_qword(self, addr):
         try:
-            return struct.unpack(
-                "<Q", str(
-                    self.inferior.read_memory(
-                        addr, 8)))[0]
+            return struct.unpack("<Q", self.inferior.read_memory(addr, 8).tobytes())[0]
         except BaseException:
             return None
 
     def get_bytes(self, addr, size):
         try:
-            return str(self.inferior.read_memory(addr, size))
+            return self.inferior.read_memory(addr, size).tobytes()
         except BaseException:
             return None
 

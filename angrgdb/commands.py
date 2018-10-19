@@ -1,7 +1,20 @@
 import gdb
-import IPython
+
+try:
+    import IPython
+    has_shell = True
+except:
+    has_shell = False
 
 from angrgdb import *
+
+import sys
+if sys.version_info >= (3, 0):
+    long = int
+    raw_input = input
+else:
+    long
+    bytes = str
 
 
 class AngrGDBError(RuntimeError):
@@ -54,7 +67,10 @@ class AngrGDBShellCommand(gdb.Command):
 
     def invoke(self, arg, from_tty):
         self.dont_repeat()
-
+        
+        if not has_shell:
+            raise AngrGDBError("Cannot open a shell, IPython is not installed")
+        
         if from_tty:
             sm = StateManager()
             IPython.embed(
@@ -150,12 +166,12 @@ class AngrGDBListCommand(gdb.Command):
                 out = "0x%x" % k
             if _ctx.symbolics[k] is not None:
                 out += " " * (20 - len(out)) + "<%d>" % _ctx.symbolics[k]
-            print out
+            print (out)
 
 
 class AngrGDBFindCommand(gdb.Command):
     '''
-    Set the address list to find
+    Set the list of find targets
 
     Usage: angrgdb find <address0> <address1> ... <addressN>
     '''
@@ -187,7 +203,7 @@ class AngrGDBFindCommand(gdb.Command):
 
 class AngrGDBAvoidCommand(gdb.Command):
     '''
-    Set the address list to find
+    Set the list of avoid targets
 
     Usage: angrgdb avoid <address0> <address1> ... <addressN>
     '''
@@ -219,7 +235,7 @@ class AngrGDBAvoidCommand(gdb.Command):
 
 class AngrGDBRunCommand(gdb.Command):
     '''
-    Generate a state from the debugger and run the exploration
+    Generate a state from the debugger state and run the exploration
     '''
 
     def __init__(self):
@@ -236,8 +252,8 @@ class AngrGDBRunCommand(gdb.Command):
         if len(_ctx.find) == 0:
             raise AngrGDBError("angrdbg run: the find list can't be empty")
 
-        print " >> to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find))
-        print " >> to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid))
+        print (" >> to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
+        print (" >> to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
 
         sm = StateManager()
         for k in _ctx.symbolics:
@@ -247,33 +263,33 @@ class AngrGDBRunCommand(gdb.Command):
                 sm.sim(k, _ctx.symbolics[k])
         m = sm.simulation_manager()
 
-        print " >> running the exploration..."
+        print (" >> running the exploration...")
         m.explore(find=_ctx.find, avoid=_ctx.avoid)
         if len(m.found) == 0:
             raise AngrGDBError(
                 "angrdbg run: valid state not found after exploration")
 
         conc = sm.concretize(m.found[0])
-        print " >> results:\n"
+        print (" >> results:\n")
         for k in _ctx.symbolics:
             out = k
             if isinstance(k, int):
                 out = "0x%x" % k
             if _ctx.symbolics[k] is not None:
                 out += " " * (20 - len(out)) + "<%d>" % _ctx.symbolics[k]
-            print out
+            print (out)
             out = conc[k]
-            if isinstance(out, str):
-                print "   ==> " + repr(out)
+            if isinstance(out, (int, long)):
+                print ("   ==> 0x%x" % out)
             else:
-                print "   ==> 0x%x" % out
+                print ("   ==> %s" % repr(out))
             print
 
         r = raw_input(
             " >> do you want to write-back the results in GDB? [Y, n] ")
         r = r.strip().upper()
         if r == "Y" or r == "":
-            print " >> syncing results with debugger..."
+            print (" >> syncing results with debugger...")
             sm.to_dbg(m.found[0])
 
 
