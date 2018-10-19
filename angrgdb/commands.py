@@ -80,7 +80,7 @@ class AngrGDBShellCommand(gdb.Command):
                 use_ns={
                     "sm": sm})'''
             print("[angrgdb]: sm is a StateManager instance created from the current GDB state")
-            gdb.execute("py from angrgdb import *; sm = StateManager(); gdb.execute('pi')")
+            gdb.execute("py from angrgdb import *; sm = StateManager(StateShot(sync_brk=False)); gdb.execute('pi')")
         else:
             raise AngrGDBError(
                 "The ipython shell can be launched only from the tty")
@@ -257,7 +257,7 @@ class AngrGDBRunCommand(gdb.Command):
         print (" >> to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
         print (" >> to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
 
-        sm = StateManager()
+        sm = StateManager(StateShot(sync_brk=False))
         for k in _ctx.symbolics:
             if _ctx.symbolics[k] is None:
                 sm.sim(k)
@@ -286,7 +286,7 @@ class AngrGDBRunCommand(gdb.Command):
             else:
                 ro = repr(out)
                 print ("   ==> %s" % ro[1:] if ro.startswith("b") else ro)
-            print
+            print()
 
         r = raw_input(
             " >> do you want to write-back the results in GDB? [Y, n] ")
