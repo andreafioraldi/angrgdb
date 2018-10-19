@@ -284,7 +284,8 @@ class AngrGDBRunCommand(gdb.Command):
             if isinstance(out, (int, long)):
                 print ("   ==> 0x%x" % out)
             else:
-                print ("   ==> %s" % repr(out))
+                ro = repr(out)
+                print ("   ==> %s" % ro[1:] if ro.startswith("b") else ro)
             print
 
         r = raw_input(

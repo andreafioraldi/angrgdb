@@ -1,2 +1,1 @@
 angrdbg
-ipython<6.0.0
