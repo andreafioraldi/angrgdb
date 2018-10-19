@@ -11,12 +11,6 @@ pip install angrgdb
 echo "python import angrgdb.commands" >> ~/.gdbinit
 ```
 
-### WARNING
-
-angrgdb needs gdb compiled with python 2!
-
-You can download the precompiled DEB packeges [here](https://github.com/andreafioraldi/gdb-py2-builds)
-
 ## Usage
 
 You can use angrgdb commands directly in GDB for simple stuffs.
