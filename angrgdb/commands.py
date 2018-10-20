@@ -17,6 +17,8 @@ else:
     bytes = str
 
 
+BANNER = " >>"
+
 class AngrGDBError(RuntimeError):
     pass
 
@@ -24,8 +26,25 @@ class AngrGDBError(RuntimeError):
 def _to_int(x):
     try:
         return int(gdb.parse_and_eval(x).cast(gdb.lookup_type("long")))
-    except BaseException:
+    except BaseException as e:
+        print (e)
         return None
+
+def _prepare_args(args):
+    return args.replace("\\", "\\\\").replace("\"", "\\\"")
+
+def _prepare_shell(loc):
+    sm = StateManager(StateShot(sync_brk=False))
+    for k in _ctx.symbolics:
+        if _ctx.symbolics[k] is None:
+            sm.sim(k)
+        else:
+            sm.sim(k, _ctx.symbolics[k])
+    loc["sm"] = sm
+    loc["m"] = sm.simulation_manager()
+    
+    loc["find"] = _ctx.find
+    loc["avoid"] = _ctx.avoid
 
 
 class CommandsContext(object):
@@ -44,46 +63,31 @@ class AngrGDBCommand(gdb.Command):
     '''
 
     def __init__(self):
-        super(
-            AngrGDBCommand,
-            self).__init__(
-            "angrgdb",
-            gdb.COMMAND_USER,
-            gdb.COMPLETE_NONE,
-            True)
+        super(AngrGDBCommand, self).__init__("angrgdb", gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
 
 
 class AngrGDBShellCommand(gdb.Command):
     '''
-    Opena python shell with a StateManager instance inside
+    Open a python shell with a StateManager instance
     '''
 
     def __init__(self):
-        super(
-            AngrGDBShellCommand,
-            self).__init__(
-            "angrgdb shell",
-            gdb.COMMAND_USER)
+        super(AngrGDBShellCommand, self).__init__("angrgdb shell", gdb.COMMAND_USER)
 
     def invoke(self, arg, from_tty):
+        global _ctx
         self.dont_repeat()
         
-        #if not has_shell:
-        #    raise AngrGDBError("Cannot open a shell, IPython is not installed")
-        
-        if from_tty:
-            '''sm = StateManager()
-            IPython.embed(
-                banner1="[angrgdb]: sm is a StateManager instance created from the current GDB state\n",
-                banner2="",
-                exit_msg="",
-                use_ns={
-                    "sm": sm})'''
-            print("[angrgdb]: sm is a StateManager instance created from the current GDB state")
-            gdb.execute("py from angrgdb import *; sm = StateManager(StateShot(sync_brk=False)); gdb.execute('pi')")
-        else:
-            raise AngrGDBError(
-                "The ipython shell can be launched only from the tty")
+        if not from_tty:
+            raise AngrGDBError("The angrgdb shell can be launched only from the tty")
+                
+        print (BANNER + " sm is a StateManager instance created from the current GDB state")
+        print (BANNER + " m is a SimulationManager based on the sm state")
+        print (BANNER + " find and avoid are the list of addresses")
+        print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
+        print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
+                
+        gdb.execute("py from angrgdb.commands import _prepare_shell; _prepare_shell(locals()); gdb.execute('pi')")
 
 
 class AngrGDBResetCommand(gdb.Command):
@@ -93,10 +97,7 @@ class AngrGDBResetCommand(gdb.Command):
 
     def __init__(self):
         super(
-            AngrGDBResetCommand,
-            self).__init__(
-            "angrgdb reset",
-            gdb.COMMAND_USER)
+            AngrGDBResetCommand, self).__init__("angrgdb reset", gdb.COMMAND_USER)
 
     def invoke(self, arg, from_tty):
         global _ctx
@@ -133,7 +134,7 @@ class AngrGDBSimCommand(gdb.Command):
         global _ctx
         self.dont_repeat()
 
-        argv = gdb.string_to_argv(arg)
+        argv = gdb.string_to_argv(_prepare_args(arg))
         if len(argv) == 0:
             raise AngrGDBError("angrdbg sim: at least a parameter is needed")
         elif len(argv) == 1:
@@ -189,7 +190,7 @@ class AngrGDBFindCommand(gdb.Command):
         global _ctx
         self.dont_repeat()
 
-        argv = gdb.string_to_argv(arg)
+        argv = gdb.string_to_argv(_prepare_args(arg))
         if len(argv) == 0:
             raise AngrGDBError("angrdbg find: at least a parameter is needed")
 
@@ -221,7 +222,7 @@ class AngrGDBAvoidCommand(gdb.Command):
         global _ctx
         self.dont_repeat()
 
-        argv = gdb.string_to_argv(arg)
+        argv = gdb.string_to_argv(_prepare_args(arg))
         if len(argv) == 0:
             raise AngrGDBError("angrdbg avoid: at least a parameter is needed")
 
@@ -254,8 +255,8 @@ class AngrGDBRunCommand(gdb.Command):
         if len(_ctx.find) == 0:
             raise AngrGDBError("angrdbg run: the find list can't be empty")
 
-        print (" >> to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
-        print (" >> to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
+        print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
+        print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
 
         sm = StateManager(StateShot(sync_brk=False))
         for k in _ctx.symbolics:
@@ -265,14 +266,14 @@ class AngrGDBRunCommand(gdb.Command):
                 sm.sim(k, _ctx.symbolics[k])
         m = sm.simulation_manager()
 
-        print (" >> running the exploration...")
+        print (BANNER + " running the exploration...")
         m.explore(find=_ctx.find, avoid=_ctx.avoid)
         if len(m.found) == 0:
             raise AngrGDBError(
                 "angrdbg run: valid state not found after exploration")
 
         conc = sm.concretize(m.found[0])
-        print (" >> results:\n")
+        print (BANNER + " results:\n")
         for k in _ctx.symbolics:
             out = k
             if isinstance(k, int):
@@ -286,13 +287,12 @@ class AngrGDBRunCommand(gdb.Command):
             else:
                 ro = repr(out)
                 print ("   ==> %s" % ro[1:] if ro.startswith("b") else ro)
-            print()
+            print ()
 
-        r = raw_input(
-            " >> do you want to write-back the results in GDB? [Y, n] ")
+        r = raw_input(BANNER + " do you want to write-back the results in GDB? [Y, n] ")
         r = r.strip().upper()
         if r == "Y" or r == "":
-            print (" >> syncing results with debugger...")
+            print (BANNER + " syncing results with debugger...")
             sm.to_dbg(m.found[0])
 
 

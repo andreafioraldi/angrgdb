@@ -2,8 +2,6 @@
 
 Use angr inside GDB. Create an angr state from the current debugger state.
 
-The project is very naive at the moment, PR are welcome.
-
 ## Install
 
 ```
@@ -13,62 +11,44 @@ echo "python import angrgdb.commands" >> ~/.gdbinit
 
 ## Usage
 
-You can use angrgdb commands directly in GDB for simple stuffs.
-
-Look here for an example:
-
-[![asciicast](https://asciinema.org/a/6KOKIBESiG68iPdesXQTjYJvR.png)](https://asciinema.org/a/6KOKIBESiG68iPdesXQTjYJvR)
-
 angrgdb implements the [angrdbg](https://github.com/andreafioraldi/angrdbg) API in GDB.
 
-You can use it with the `angrgdb shell` command.
+You can use it in scripts like this:
 
+```python
+from angrgdb import *
+
+gdb.execute("b *0x004005f9")
+gdb.execute("r aaaaaaaa")
+
+sm = StateManager()
+sm.sim(sm["rax"], 100)
+
+m = sm.simulation_manaer()
+m.explore(find=0x00400607, avoid=0x00400613)
+
+sm.to_dbg(m.found[0]) #write input to GDB
+
+gdb.execute("x/s $rax")
+#0x7fffffffe768:	"ais3{I_tak3_g00d_n0t3s}"
+gdb.execute("c")
+#Correct! that is the secret key!
 ```
-(gdb) b *0x004005f9
-Breakpoint 1 at 0x4005f9
-(gdb) r aaaaaaaa
-Starting program: /ais3_crackme aaaaaaaa
 
-Breakpoint 1, 0x00000000004005f9 in main ()
-(gdb) x/s $rax
-0x7fffffffe768:	"aaaaaaaa"
-(gdb) angrgdb shell
- >> creating angr project...
- >> done.
-[angrgdb]: sm is a StateManager instance created from the current GDB state
+You can also use angrgdb commands directly in GDB for simple stuffs:
 
-In [1]: sm["rip"]
-Out[1]: <BV64 0x4005f9>
++ `angrgdb sim <register name> [size]` Symbolize a register
+* `angrgdb sim <address> [size]` Symbolize a memory area
++ `angrgdb list` List all items that you setted as symbolic
++ `angrgdb find <address0> <address1> ... <addressN>` Set the list of find targets
++ `angrgdb avoid <address0> <address1> ... <addressN>` Set the list of avoid targets
++ `angrgdb reset` Reset the context (symbolic values and targets)
++ `angrgdb run` Generate a state from the debugger state and run the exploration
++ `angrgdb shell` Open an shell with a StateManager instance created from the current GDB state
 
-In [2]: sm[sm["rax"]].string
-Out[2]: <string_t <BV64 0x6161616161616161> at 0x7fffffffe768>
+An example crackme solve using angrgdb+GEF+[idb2gdb](https://github.com/andreafioraldi/idb2gdb):
 
-In [3]: sm.sim(sm["rax"], 100)
-
-In [4]: m = sm.simulation_manager()
-
-In [5]: m.explore(find=0x00400607, avoid=0x00400613)
-Out[5]: <SimulationManager with 3 active, 1 found, 46 avoid>
-
-In [6]: sm.concretize(m.found[0])
-Out[6]: {140737488349032L: 'ais3{I_tak3_g00d_n0t3s}\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'}
-
-In [7]: sm.to_dbg(m.found[0])
-
-In [8]: exit()
-
-(gdb) x/s $rax
-0x7fffffffe768:	"ais3{I_tak3_g00d_n0t3s}"
-(gdb) c
-Continuing.
-
-Breakpoint 1, 0x00000000004005f9 in main ()
-(gdb) c
-Continuing.
-Correct! that is the secret key!
-[Inferior 1 (process 5284) exited normally]
-(gdb) q
-```
+[![asciicast](https://asciinema.org/a/207571.png)](https://asciinema.org/a/207571)
 
 ### Loading scripts in GDB
 
