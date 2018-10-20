@@ -38,7 +38,7 @@ gdb.execute("c")
 You can also use angrgdb commands directly in GDB for simple stuffs:
 
 + `angrgdb sim <register name> [size]` Symbolize a register
-* `angrgdb sim <address> [size]` Symbolize a memory area
++ `angrgdb sim <address> [size]` Symbolize a memory area
 + `angrgdb list` List all items that you setted as symbolic
 + `angrgdb find <address0> <address1> ... <addressN>` Set the list of find targets
 + `angrgdb avoid <address0> <address1> ... <addressN>` Set the list of avoid targets
