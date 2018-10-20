@@ -24,7 +24,7 @@ gdb.execute("r aaaaaaaa")
 sm = StateManager()
 sm.sim(sm["rax"], 100)
 
-m = sm.simulation_manaer()
+m = sm.simulation_manager()
 m.explore(find=0x00400607, avoid=0x00400613)
 
 sm.to_dbg(m.found[0]) #write input to GDB
