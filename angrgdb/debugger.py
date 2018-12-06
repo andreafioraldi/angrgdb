@@ -20,6 +20,7 @@ from angrdbg import *
 class GDBDebugger(Debugger):
     def __init__(self):
         self.inferior = gdb.selected_inferior()
+        self.pid = self.inferior.pid
         self.base_addr = None
         self.efl_map = {}
         self.efl_map['CF'] = 1 << 0
@@ -33,9 +34,8 @@ class GDBDebugger(Debugger):
         self.efl_map['OF'] = 1 << 11
 
     def _get_vmmap(self):
-        pid = int(self.inferior.pid)
         maps = []
-        mpath = "/proc/%s/maps" % pid
+        mpath = "/proc/%s/maps" % self.pid
         # 00400000-0040b000 r-xp 00000000 08:02 538840  /path/to/file
         pattern = re.compile(
             "([0-9a-f]*)-([0-9a-f]*) ([rwxps-]*)(?: [^ ]*){3} *(.*)")
@@ -73,6 +73,7 @@ class GDBDebugger(Debugger):
     # -------------------------------------
     def before_stateshot(self):
         self.vmmap = self._get_vmmap()
+        self.base_addr = self.vmmap[0][0]
         sections = self._get_sections()
 
         for start, end, name in sections:
@@ -96,11 +97,6 @@ class GDBDebugger(Debugger):
         return open(gdb.current_progspace().filename, "rb")
 
     def image_base(self):
-        if self.base_addr is None:
-            mappings = gdb.execute("info proc mappings", to_string=True)
-            first_num_pos = mappings.find("0x")
-            self.base_addr = int(
-                mappings[first_num_pos: mappings.find(" ", first_num_pos)], 16)
         return self.base_addr
 
     # -------------------------------------
