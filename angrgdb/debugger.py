@@ -80,6 +80,8 @@ class GDBDebugger(Debugger):
                 self.got = (start, end)
             elif name == ".plt":
                 self.plt = (start, end)
+            elif name == ".idata":
+                self.plt = (start, end)
         self.long_type = gdb.lookup_type("long")
 
     def after_stateshot(self, state):
@@ -196,6 +198,9 @@ class GDBDebugger(Debugger):
 
     def get_plt(self):  # return tuple(start_addr, end_addr)
         return self.plt
+    
+    def get_idata(self):  # return tuple(start_addr, end_addr)
+        return self.idata
 
     # -------------------------------------
     def resolve_name(self, name):  # return None on fail
