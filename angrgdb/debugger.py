@@ -35,6 +35,8 @@ class GDBDebugger(Debugger):
 
     def _get_vmmap(self):
         maps = []
+        if self.pid == 0:
+            self.pid = self.inferior.pid
         mpath = "/proc/%s/maps" % self.pid
         # 00400000-0040b000 r-xp 00000000 08:02 538840  /path/to/file
         pattern = re.compile(
