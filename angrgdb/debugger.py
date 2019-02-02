@@ -104,7 +104,8 @@ class GDBDebugger(Debugger):
 
     # -------------------------------------
     def input_file(self):
-        return open(gdb.current_progspace().filename, "rb")
+        return gdb.current_progspace().filename
+        #return open(gdb.current_progspace().filename, "rb")
 
     def image_base(self):
         if self.base_addr is None:
@@ -168,12 +169,31 @@ class GDBDebugger(Debugger):
                     value |= self.efl_map[f]
             return value
         else:
-            return int(gdb.parse_and_eval("$" + name).cast(self.long_type))
+            reg_val = gdb.parse_and_eval("$" + name)
+            if reg_val.type.code == gdb.TYPE_CODE_UNION: #SSE
+                value = 0
+                for i in range(8):
+                    try:
+                        v = int(reg_val["v8_int32"][i].cast(self.long_type)) << i * 32
+                    except gdb.error:
+                        break
+                    value |= v
+                return value
+            else:
+                return int(reg_val.cast(self.long_type))
 
     def set_reg(self, name, value):
         if name == "efl":
             name = "eflags"
-        gdb.execute("set $%s = %d" % (name, value))
+        if name.startswith("xmm"):
+            gdb.execute("set $%s.uint128 = %d" % (name, value))
+        elif name.startswith("ymm"):
+            v0 = value & 0xffffffffffffffffffffffffffffffff
+            v1 = (value >> 128) & 0xffffffffffffffffffffffffffffffff
+            gdb.execute("set $%s.v2_int128[0] = %d" % (name, v0))
+            gdb.execute("set $%s.v2_int128[1] = %d" % (name, v1))
+        else:
+            gdb.execute("set $%s = %d" % (name, value))
 
     # -------------------------------------
     def step_into(self):
