@@ -7,7 +7,7 @@ __email__ = "andreafioraldi@gmail.com"
 
 from setuptools import setup
 
-VER = "1.0.13"
+VER = "1.0.14"
 
 setup(
     name='angrgdb',

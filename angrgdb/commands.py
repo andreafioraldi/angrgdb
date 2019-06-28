@@ -40,6 +40,7 @@ def _prepare_args(args):
     return args.replace("\\", "\\\\").replace("\"", "\\\"")
 
 def _prepare_shell(loc):
+    p = load_project(support_selfmodifying_code=True)
     sm = StateManager(sync_brk=False)
     for k in _ctx.symbolics:
         if _ctx.symbolics[k] is None:
@@ -264,7 +265,10 @@ class AngrGDBRunCommand(gdb.Command):
         print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
         print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
 
+        p = load_project(support_selfmodifying_code=True)
         sm = StateManager(sync_brk=False)
+        for o in angr.options.unicorn: sm.state.options.add(o)
+        
         for k in _ctx.symbolics:
             if _ctx.symbolics[k] is None:
                 sm.sim(k)
@@ -304,7 +308,7 @@ class AngrGDBRunCommand(gdb.Command):
 
 class AngrGDBInteractiveCommand(gdb.Command):
     '''
-    Generate a state from the debugger state and run the exploration interatively using angr-cli <https://github.com/fmagin/angr-cli>
+    Generate a state from the debugger state and run the exploration interatively using a custom version of angr-cli
     '''
 
     def __init__(self):
@@ -318,32 +322,29 @@ class AngrGDBInteractiveCommand(gdb.Command):
         global _ctx
         self.dont_repeat()
 
-        try:
-            import angrcli.plugins.context_view
-            import angrcli.interaction.explore
-        except:
-            raise AngrGDBError(
-                "angrdbg interative: angr-cli is not installed")
+        from . import context_view
+        from . import explore
 
         print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
         print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
-
-        p = load_project()
-        sm = StateManager(sync_brk=False)
-        sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
-        sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS)
-        
-        for k in _ctx.symbolics:
-            if _ctx.symbolics[k] is None:
-                sm.sim(k)
-            else:
-                sm.sim(k, _ctx.symbolics[k])
-        m = sm.simulation_manager()
-
-        print (BANNER + " running the exploration...")
-        
         try:
-            e = angrcli.interaction.explore.ExploreInteractive(p, sm.state)
+            p = load_project(support_selfmodifying_code=True)
+            sm = StateManager(sync_brk=False)
+            sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
+            sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS)
+            for o in angr.options.unicorn: sm.state.options.add(o)
+            
+            for k in _ctx.symbolics:
+                if _ctx.symbolics[k] is None:
+                    sm.sim(k)
+                else:
+                    sm.sim(k, _ctx.symbolics[k])
+            m = sm.simulation_manager()
+
+            print (BANNER + " running the exploration...")
+        
+        
+            e = explore.ExploreInteractive(p, sm.state)
             e.cmdloop()
         except:
             import traceback
