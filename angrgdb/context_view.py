@@ -96,12 +96,12 @@ class ContextView(SimStatePlugin):
         if type(bv) == str:
             return bv
         if "reg" in str(bv):
-            args = list()
+            replname = str(bv)
             for v in self.state.solver.describe_variables(bv):
                 if "reg" in v:
                     ridx = v[1]
                     regname = self.state.arch.register_names[ridx]
-            replname = str(bv).replace("reg_" + hex(ridx)[2:], regname)
+                    replname = replname.replace("reg_" + hex(ridx)[2:], regname)
             return replname
         return str(bv)
 
@@ -124,7 +124,7 @@ class ContextView(SimStatePlugin):
                 return self.grey(self.BVtoREG(bv))
             return self.green(self.BVtoREG(bv))
         # its concrete
-        value = self.state.solver.eval(bv)
+        value = self.state.solver.eval(bv, cast_to=int)
         try:
             perm = self.state.memory.permissions(value)
             if perm:
@@ -329,17 +329,16 @@ class ContextView(SimStatePlugin):
                 deref = self.state.mem[addr].uintptr_t.resolved
             if deref.concrete or not deref.uninitialized:
                 value = self.state.solver.eval(deref)
-                if not value == addr and not value == 0:
-                    return " ──> %s" % self.pstr_ast(deref)
+                if not value == addr and not value == 0 and depth < MAX_AST_DEPTH:
+                    return " ──> %s" % self.pstr_ast(deref, depth=depth+1)
 
-    def pstr_ast(self, ast, ty=None):
+    def pstr_ast(self, ast, ty=None, depth=0):
         """Return a pretty string for an AST including a description of the derefed value if it makes sense (i.e. if
         the ast is concrete and the derefed value is not uninitialized
         More complex rendering is possible if type information is supplied
         """
         if isinstance(ty, SimTypePointer):
             if ast.concrete:
-                if isinstance(ty.pts_to, SimTypeChar):
                     try:
                         tmp = "%s ──> %s" %(self.cc(ast), self.state.mem[ast].string.concrete)
                     except ValueError:
@@ -357,8 +356,8 @@ class ContextView(SimStatePlugin):
 
         if ast.concrete:
             value = self.state.solver.eval(ast)
-            if ast.op =='BVV' and self.__deref_addr(value):
-                return self.cc(ast) + self.__deref_addr(value)
+            if ast.op =='BVV' and self.__deref_addr(value, depth+1):
+                return self.cc(ast) + self.__deref_addr(value, depth+1)
             else:
                 return self.cc(ast)
         else:

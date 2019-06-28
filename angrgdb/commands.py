@@ -129,18 +129,18 @@ class AngrGDBSimCommand(gdb.Command):
             gdb.COMMAND_DATA)
 
     def _process_argv0(self, x):
+        if x in load_project(support_selfmodifying_code=True).arch.registers:
+            return x
         r = _to_int(x)
         if r:
             return r
-        if x in load_project().arch.registers:
-            return x
         raise AngrGDBError(
             "angrdbg sim: the first parameter is not an address or a register")
 
     def invoke(self, arg, from_tty):
         global _ctx
         self.dont_repeat()
-
+        
         argv = gdb.string_to_argv(_prepare_args(arg))
         if len(argv) == 0:
             raise AngrGDBError("angrdbg sim: at least a parameter is needed")

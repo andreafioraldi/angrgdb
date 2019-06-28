@@ -21,7 +21,7 @@ def red(text):
 class ExploreInteractive(Cmd, object):
 
     intro = red("[!] Dropping into angr shell\n") 
-    intro += red("Available Commands: print, (p)ick, (r)un, (s)tep, stepi, (q)uit")
+    intro += red("Available Commands: print, pyshell, (p)ick, (r)un, (s)tep, stepi, (q)uit")
     prompt = red(">>> ")
 
     def __init__(self, proj, state, gui_callback_object=GUICallbackBaseClass()):
@@ -152,6 +152,10 @@ class ExploreInteractive(Cmd, object):
     
     def do_p(self, args):
         self.do_pick(args)
+    
+    def do_pyshell(self, args):
+        import gdb
+        gdb.execute('pi')
 
     def do_EOF(self, args):
         self.do_quit(args)
