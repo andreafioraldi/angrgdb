@@ -4,6 +4,7 @@
 ######################################################
 
 import gdb
+import angr
 
 '''try:
     import IPython
@@ -39,7 +40,7 @@ def _prepare_args(args):
     return args.replace("\\", "\\\\").replace("\"", "\\\"")
 
 def _prepare_shell(loc):
-    sm = StateManager(StateShot(sync_brk=False))
+    sm = StateManager(sync_brk=False)
     for k in _ctx.symbolics:
         if _ctx.symbolics[k] is None:
             sm.sim(k)
@@ -263,7 +264,7 @@ class AngrGDBRunCommand(gdb.Command):
         print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
         print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
 
-        sm = StateManager(StateShot(sync_brk=False))
+        sm = StateManager(sync_brk=False)
         for k in _ctx.symbolics:
             if _ctx.symbolics[k] is None:
                 sm.sim(k)
@@ -301,6 +302,83 @@ class AngrGDBRunCommand(gdb.Command):
             sm.to_dbg(m.found[0])
 
 
+class AngrGDBInteractiveCommand(gdb.Command):
+    '''
+    Generate a state from the debugger state and run the exploration interatively using angr-cli <https://github.com/fmagin/angr-cli>
+    '''
+
+    def __init__(self):
+        super(
+            AngrGDBInteractiveCommand,
+            self).__init__(
+            "angrgdb interactive",
+            gdb.COMMAND_DATA)
+
+    def invoke(self, arg, from_tty):
+        global _ctx
+        self.dont_repeat()
+
+        try:
+            import angrcli.plugins.context_view
+            import angrcli.interaction.explore
+        except:
+            raise AngrGDBError(
+                "angrdbg interative: angr-cli is not installed")
+
+        print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
+        print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
+
+        p = load_project()
+        sm = StateManager(sync_brk=False)
+        sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
+        sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS)
+        
+        for k in _ctx.symbolics:
+            if _ctx.symbolics[k] is None:
+                sm.sim(k)
+            else:
+                sm.sim(k, _ctx.symbolics[k])
+        m = sm.simulation_manager()
+
+        print (BANNER + " running the exploration...")
+        
+        try:
+            e = angrcli.interaction.explore.ExploreInteractive(p, sm.state)
+            e.cmdloop()
+        except:
+            import traceback
+            traceback.print_exc()
+            raise AngrGDBError(
+                "angrdbg interactive: error in angr-cli exploration")
+        
+        if "found" not in e.simgr.stashes or len(e.simgr.found) == 0:
+            raise AngrGDBError(
+                "angrdbg interactive: valid state not found after exploration")
+
+        conc = sm.concretize(e.simgr.found[0])
+        print (BANNER + " results:\n")
+        for k in _ctx.symbolics:
+            out = k
+            if isinstance(k, int):
+                out = "0x%x" % k
+            if _ctx.symbolics[k] is not None:
+                out += " " * (20 - len(out)) + "<%d>" % _ctx.symbolics[k]
+            print (out)
+            out = conc[k]
+            if isinstance(out, (int, long)):
+                print ("   ==> 0x%x" % out)
+            else:
+                ro = repr(out)
+                print ("   ==> %s" % ro[1:] if ro.startswith("b") else ro)
+            print ()
+
+        r = raw_input(BANNER + " do you want to write-back the results in GDB? [Y, n] ")
+        r = r.strip().upper()
+        if r == "Y" or r == "":
+            print (BANNER + " syncing results with debugger...")
+            sm.to_dbg(m.found[0])
+
+
 AngrGDBCommand()
 AngrGDBShellCommand()
 AngrGDBResetCommand()
@@ -309,3 +387,4 @@ AngrGDBListCommand()
 AngrGDBFindCommand()
 AngrGDBAvoidCommand()
 AngrGDBRunCommand()
+AngrGDBInteractiveCommand()
