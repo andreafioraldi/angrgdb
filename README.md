@@ -45,7 +45,7 @@ You can also use angrgdb commands directly in GDB for simple stuffs:
 + `angrgdb reset` Reset the context (symbolic values and targets)
 + `angrgdb run` Generate a state from the debugger state and run the exploration
 + `angrgdb shell` Open an shell with a StateManager instance created from the current GDB state
-+ `angrgdb interactive` Generate a state from the debugger state and explore by hand using a modified version of [angr-cli](https://github.com/fmagin/angr-cli)
++ `angrgdb interactive` Generate a state from the debugger state and explore by hand using [angr-cli](https://github.com/fmagin/angr-cli)
 
 An example crackme solve using angrgdb+GEF+[idb2gdb](https://github.com/andreafioraldi/idb2gdb):
 

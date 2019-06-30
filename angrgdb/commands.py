@@ -322,12 +322,16 @@ class AngrGDBInteractiveCommand(gdb.Command):
         global _ctx
         self.dont_repeat()
 
-        from . import context_view
-        from . import explore
+        try:
+            import angrcli.plugins.context_view
+            from angrcli.interaction import explore
+        except ImportError:
+            raise AngrGDBError(
+                "angrdbg interactive: angr-cli is not installed, please install it if you want to use the interactive command")
 
         print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
         print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
-        try:
+        
             p = load_project(support_selfmodifying_code=True)
             sm = StateManager(sync_brk=False)
             sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
@@ -343,7 +347,7 @@ class AngrGDBInteractiveCommand(gdb.Command):
 
             print (BANNER + " running the exploration...")
         
-        
+        try:
             e = explore.ExploreInteractive(p, sm.state)
             e.cmdloop()
         except:
