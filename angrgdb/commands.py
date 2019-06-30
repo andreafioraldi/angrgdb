@@ -331,21 +331,23 @@ class AngrGDBInteractiveCommand(gdb.Command):
 
         print (BANNER + " to find:", ", ".join(map(lambda x: "0x%x" % x, _ctx.find)))
         print (BANNER + " to avoid:", ", ".join(map(lambda x: "0x%x" % x, _ctx.avoid)))
+    
+        p = load_project(support_selfmodifying_code=True)
+        sm = StateManager(sync_brk=False)
         
-            p = load_project(support_selfmodifying_code=True)
-            sm = StateManager(sync_brk=False)
-            sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
-            sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS)
-            for o in angr.options.unicorn: sm.state.options.add(o)
-            
-            for k in _ctx.symbolics:
-                if _ctx.symbolics[k] is None:
-                    sm.sim(k)
-                else:
-                    sm.sim(k, _ctx.symbolics[k])
-            m = sm.simulation_manager()
+        sm.state.context_view.use_only_capstone = True
+        sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
+        sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS)
+        for o in angr.options.unicorn: sm.state.options.add(o)
+        
+        for k in _ctx.symbolics:
+            if _ctx.symbolics[k] is None:
+                sm.sim(k)
+            else:
+                sm.sim(k, _ctx.symbolics[k])
+        m = sm.simulation_manager()
 
-            print (BANNER + " running the exploration...")
+        print (BANNER + " running the exploration...")
         
         try:
             e = explore.ExploreInteractive(p, sm.state)
