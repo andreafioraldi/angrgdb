@@ -335,7 +335,7 @@ class AngrGDBInteractiveCommand(gdb.Command):
         p = load_project(support_selfmodifying_code=True)
         sm = StateManager(sync_brk=False)
         
-        sm.state.context_view.use_only_capstone = True
+        sm.state.context_view.use_only_linear_disasm = True
         sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY)
         sm.state.options.add(angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS)
         for o in angr.options.unicorn: sm.state.options.add(o)
