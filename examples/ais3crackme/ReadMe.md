@@ -1,3 +1,7 @@
+Some of the content of this example was taken this site:
+https://github.com/andreafioraldi/angrgdb
+which is an older version of the github page for angrgdb, but the commands don't work with the current version.
+
 The executable is one of the standard angr executables available here:
 https://github.com/angr/angr-doc/tree/master/examples/ais3_crackme
 
@@ -64,4 +68,40 @@ Correct! that is the secret key!
 (gdb) 
 
 ```
+
+you can use the python example by calling 
+
+''' source ais3_crackme.py '''
+
+like this:
+'''
+gdb ais3_crackme 
+GNU gdb (Ubuntu 8.3-0ubuntu1) 8.3
+Copyright (C) 2019 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from ais3_crackme...
+(No debugging symbols found in ais3_crackme)
+(gdb) source ais3_crackme.py 
+Breakpoint 1 at 0x4005f9
+
+Breakpoint 1, 0x00000000004005f9 in main ()
+0x0000000000400002 in ?? ()
+0x7fffffffe3b6:	"ais3{I_tak3_g00d_n0t3s}"
+
+Breakpoint 1, 0x00000000004005f9 in main ()
+(gdb) 
+
+'''
 
