@@ -75,7 +75,7 @@ WARNING | 2020-01-15 07:29:13,557 | angr.engines.vex.lifter | Self-modifying cod
 Thanks to Michael Bann!
 you can use the python example by calling
 
-```source ais3_crackme.py```
+```source crackme.py```
 However, you have to enter the 64 A's by hand for some reason. I suspect it's a threading issue.
 like this:
 
