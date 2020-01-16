@@ -1,7 +1,3 @@
-Some of the content of this example was taken this site:
-https://github.com/andreafioraldi/angrgdb
-which is an older version of the github page for angrgdb, but the commands don't work with the current version.
-
 The executable is one of the standard angr executables available here:
 https://github.com/angr/angr-doc/tree/master/examples/ais3_crackme
 
