@@ -1,9 +1,4 @@
-Some of the content of this example was taken this site:
-https://github.com/andreafioraldi/angrgdb
-which is an older version of the github page for angrgdb, but the commands don't work with the current version.
-
-The executable is one of the standard angr executables available here:
-https://github.com/angr/angr-doc/tree/master/examples/ais3_crackme
+On the main page for this project, there is an example in the form of an asciinema. The executable for that example comes from [BackdoorCTF 2017]
 
 Commands to run this example:
 ```
