@@ -71,10 +71,11 @@ Correct! that is the secret key!
 
 you can use the python example by calling 
 
-''' source ais3_crackme.py '''
+```source ais3_crackme.py```
 
 like this:
-'''
+
+```
 gdb ais3_crackme 
 GNU gdb (Ubuntu 8.3-0ubuntu1) 8.3
 Copyright (C) 2019 Free Software Foundation, Inc.
@@ -103,5 +104,5 @@ Breakpoint 1, 0x00000000004005f9 in main ()
 Breakpoint 1, 0x00000000004005f9 in main ()
 (gdb) 
 
-'''
+```
 
