@@ -62,7 +62,7 @@ hacked[Inferior 1 (process 6036) exited normally]
 (gdb) 
 
 ```
-you can use the python example by calling
+You can use the python example by calling
 
 ```source ais3_crackme.py```
 
