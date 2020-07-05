@@ -60,3 +60,21 @@ To load a script in GDB use `source script.py`.
 
 + add remote angrdbg like in IDAngr
 
+## Cite
+
+
+## Cite
+
+Thesis [PDF](https://arxiv.org/pdf/2006.16601.pdf).
+
+Bibtex:
+```
+@misc{fioraldi2020symbolic,
+    title={Symbolic Execution and Debugging Synchronization},
+    author={Andrea Fioraldi},
+    year={2020},
+    eprint={2006.16601},
+    archivePrefix={arXiv},
+    primaryClass={cs.CR}
+}
+```
