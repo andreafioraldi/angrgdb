@@ -62,9 +62,6 @@ To load a script in GDB use `source script.py`.
 
 ## Cite
 
-
-## Cite
-
 Thesis [PDF](https://arxiv.org/pdf/2006.16601.pdf).
 
 Bibtex:
